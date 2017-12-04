@@ -1,0 +1,3 @@
+#define SPEAKER_DDR DDRC
+#define SPEAKER_PORT PORTC
+#define SPEAKER_PIN PC0

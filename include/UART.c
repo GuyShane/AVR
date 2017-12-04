@@ -1,0 +1,86 @@
+#include <avr/io.h>
+#include "UART.h"
+#include <util/setbaud.h>
+#include <stdlib.h>
+
+void uart_init()
+{
+  UBRR0H=UBRRH_VALUE; //Set baud rate
+  UBRR0L=UBRRL_VALUE;
+#if USE_2X
+  UCSR0A|=(1<<U2X0); 
+#else
+  UCSR0A&=~(1<<U2X0);
+#endif
+  UCSR0B=(1<<TXEN0)|(1<<RXEN0); //Enable transmit and receive
+  UCSR0C=(1<<UCSZ01)|(1<<UCSZ00); //8 bit data frame
+}
+
+void uart_transmit(uint8_t data)
+{
+  loop_until_bit_is_set(UCSR0A,UDRE0);
+  UDR0=data;
+}
+
+uint8_t uart_receive(void)
+{
+  loop_until_bit_is_set(UCSR0A,RXC0);
+  return UDR0;
+}
+
+void uart_gets(char *s, int len) {
+  int count=0;
+  uint8_t byte=uart_receive();
+  while(byte!='\r' && count<len-1) {
+    s[count++]=byte;
+    byte=uart_receive();
+  }
+  s[count]=0;
+}
+
+int uart_getint(void) {
+  int len=11;
+  char s[len];
+  uart_gets(s,len);
+  //return strtol(s,NULL,len);
+  return atoi(s);
+}
+
+void uart_prints(const char s[])
+{
+  int i=0;
+  while(s[i])
+    {
+      uart_transmit(s[i++]);
+    }
+}
+
+void uart_printsln(const char s[])
+{
+  uart_prints(s);
+  uart_prints("\r\n");
+}
+
+void uart_printint(int num)
+{
+  char *s=malloc(20*sizeof(char));
+  itoa(num,s,10);
+  uart_prints(s);
+  free(s);
+}
+
+void uart_printint_bin(int num)
+{
+  char *s=malloc(64*sizeof(char));
+  itoa(num,s,2);
+  uart_prints(s);
+  free(s);  
+}
+
+void uart_printint_hex(int num)
+{
+  char *s=malloc(64*sizeof(char));
+  itoa(num,s,16);
+  uart_prints(s);
+  free(s);  
+}
